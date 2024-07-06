@@ -107,14 +107,15 @@ async def handle_callback(request: Request):
             else:
                 messages = chatgpt
 
-            # URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
-            # response = requests.get(URL)
-            if response.status_code == 200:
-                print('success')
-                reply_msg = 'success test'
-            else:
-                print('fail')
-                reply_msg = 'fail test'
+            # # URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
+            # # response = requests.get(URL)
+            # if response.status_code == 200:
+            #     print('success')
+            #     reply_msg = 'success test'
+            # else:
+            #     print('fail')
+            #     reply_msg = 'fail test'
+            reply_msg = f'test your message: {text}'
 
             # bot_condition = {
             #     "清空": 'A',
