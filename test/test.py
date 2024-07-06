@@ -278,25 +278,49 @@ def save_txt_file(output:str, path:str):
 
     return 'OK'
 
+
+def google_search(user_input):
+    cx = '339feef75a8d2425c'
+    key = 'AIzaSyAtcaJBfsyntOQvBtndhQufp3CVxkKQDXE'
+    url1 = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={user_input}' # Google 搜尋
+
+    response = requests.get(url1)
+    if response.status_code == 200:
+        data = response.json() # 得到的 json 檔案
+        print("JSON檔案已成功擷取。")
+    else:
+        print(f"擷取失敗，狀態碼：{response.status_code}")
+
+    url2 = data['items'][0]['link'] # Google 搜尋結果的第一個連結
+    response = requests.get(url2)
+    if response.status_code == 200:
+        content = response.text
+    else:
+        print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
+
+    return url2, content
 if __name__ == "__main__":
     text = "台灣近期有許多地震，尤其是台南已經倒了數層樓，望周知。"
-    URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
-    response = requests.get(URL)
-    #print(response.text)
-    # LLM summarize
-    llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
-    #print(llm_summarize)
-    # Compare
-    relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
-    #print(relevance)
-    relevance = relevance.strip()
-    if relevance == "Yes":
-        reply_msg = llm_summarize
-    elif relevance == "No":
+    URL, content = google_search(text)
+    find = False
+    for i in range(1):
+        response = requests.get(URL)
+
+        # LLM summarize
+        llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+
+        # Compare
+        relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
+        #print(relevance)
+        relevance = relevance.strip()
+        if relevance == "Yes":
+            reply_msg = llm_summarize
+            find = True
+            break
+        # else: continue
+
+    if find == False:
         reply_msg = content_call(mname='gemini-1.5-flash', query=text)
-    else:
-        reply_msg = '?'
-    
     print(reply_msg)
     # port = int(os.environ.get('PORT', default=8080))
     # debug = True if os.environ.get(
