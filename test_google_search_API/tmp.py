@@ -52,6 +52,19 @@ response = model.generate_content(
 )
 print(response.text)
 
+def gemini_image_search(img_path:str):
+    file = genai.upload_file(path=img_path, display_name='image')
+    response = model.generate_content(
+        [file, "Do the Fact check on the image and reply in traditional chinese."],
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    print("Fact check of the image:")
+    print(response.text)
+    return response.text
+
+reply = gemini_image_search('image.png')
+
 
 
 
