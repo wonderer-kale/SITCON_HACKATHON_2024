@@ -192,11 +192,16 @@ async def handle_callback(request: Request):
 
             URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
             response = requests.get(URL)
-            print('success' if response.status_code == 200 else 'fail')
+
+            if response.status_code == 200:
+                data = response.json()
+                print('success')
+            else:
+                print('fail')
 
             find = False
 
-            for i in range(3):
+            for i in range(1):
                 URL = data['items'][i]['link']
                 response = requests.get(URL)
 
