@@ -1,32 +1,26 @@
 import json
 import requests
 
-user_input = input()
-url1 = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={user_input}'
+cx = '339feef75a8d2425c'
+key = 'AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004'
 
-response = requests.get(url1)
-if response.status_code == 200:
-    with open('downloaded_file.json', 'wb') as file:
-        file.write(response.content)
-    print("JSON檔案已成功下載。")
-else:
-    print(f"下載失敗，狀態碼：{response.status_code}")
+def google_search(user_input):
+    url1 = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={user_input}' # Google 搜尋
 
-file_path = 'downloaded_file.json'
-with open(file_path, 'r', encoding='utf-8') as file:
-    data = json.load(file)
+    response = requests.get(url1)
+    if response.status_code == 200:
+        data = response.json() # 得到的 json 檔案
+        print("JSON檔案已成功擷取。")
+    else:
+        print(f"擷取失敗，狀態碼：{response.status_code}")
 
-'''
-for query in data['items']:
-    print(query['link'])
-'''
+    url2 = data['items'][0]['link'] # Google 搜尋結果的第一個連結
+    response = requests.get(url2)
+    if response.status_code == 200:
+        content = response.text
+        with open('output.html', 'w', encoding='utf-8') as file:
+            file.write(content) # 將網頁內容存成 HTML 檔
+    else:
+        print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
 
-url2 = data['items'][0]['link']
-response = requests.get(url2)
-if response.status_code == 200:
-    content = response.text
-    with open('output.html', 'w', encoding='utf-8') as file:
-        file.write(content)
-    print(content)
-else:
-    print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
+    return url2, content
