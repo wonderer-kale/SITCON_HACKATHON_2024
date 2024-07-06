@@ -111,10 +111,10 @@ async def handle_callback(request: Request):
             response = requests.get(URL)
             if response.status_code == 200:
                 print('success')
-                reply_msg = response.text
+                reply_msg = 'success test'
             else:
                 print('fail')
-                reply_msg = 'fail'
+                reply_msg = 'fail test'
 
             # bot_condition = {
             #     "清空": 'A',
