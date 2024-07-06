@@ -37,12 +37,13 @@ def google_search(api_key, cse_id, query, num_results=10):
 
 # Sample
 api_key = 'AIzaSyDjvZHfMooBcO0sf-cm2j9gydH9mFrGuqE'
+gemini_api_key = 'AIzaSyBt8nrTzyzWU3vThxqRaSRww7ktVxhCUAg'
 cse_id = 'b0be1ab353ad04e22'
 query = '台電回饋金採「登錄制」!  6/30前要登入，7/1就截止申請! 504元不拿白不拿！馬上就去辦。沒登錄，無法拿到獎勵，台電也不會感激咱們民眾！是每個月都有補貼呦~504x12個月=6048元呢~已查證屬實！https://tpcuip.taipower.com.tw/savepower/'
 results = google_search(api_key, cse_id, query)
 # print(results) # {}
 
-genai.configure(api_key=api_key)
+genai.configure(api_key=gemini_api_key) #use bo-jyun's API key
 model = genai.GenerativeModel('gemini-1.5-flash')
 response = model.generate_content(
     contents=query,
