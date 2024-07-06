@@ -91,7 +91,7 @@ def content_call(mname:str, query:str):
     model = genai.GenerativeModel(mname)
     prompt = "Fact check the message. If it is a recent event and you can't check the fact, you should obey the truthfulness of the message to reply. Reply in traditional Chinese."
     response = model.generate_content(
-        contents=query,
+        contents=f"{query}\n{prompt}",
         generation_config={'temperature': 0.0},
         safety_settings=safety_settings
     )
