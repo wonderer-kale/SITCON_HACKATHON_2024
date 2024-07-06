@@ -18,8 +18,6 @@ def google_search(user_input):
     response = requests.get(url2)
     if response.status_code == 200:
         content = response.text
-        with open('output.html', 'w', encoding='utf-8') as file:
-            file.write(content) # 將網頁內容存成 HTML 檔
     else:
         print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
 
