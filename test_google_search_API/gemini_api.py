@@ -1,4 +1,3 @@
-import argparse
 import google.generativeai as genai
 gemini_api_key = 'AIzaSyBt8nrTzyzWU3vThxqRaSRww7ktVxhCUAg'
 genai.configure(api_key=gemini_api_key) #use bo-jyun's API key
@@ -53,24 +52,29 @@ def extract_image_text(mname:str, img_path:str):
     )
     return response.text
 
+def summarize_html(mname:str, query:str):
+    model = genai.GenerativeModel(mname)
+    response = model.generate_content(
+        contents=f"Given a HTML files, summarize the news article.\nHTML files: {query}",
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    return response.text
+
+def faithfulness_check(mname:str, message:str, article:str):
+    model = genai.GenerativeModel(mname)
+    PROMPT = """Here are the message and the article:
+    Faithful if the message is faithful to the article.
+    Neural if the message and article is not related.
+    Contradict if the message contradicts the article.
+    Fact check the following message by the article and reply "Faithful", "Neural" or "Contradict" only.
+    """
+    response = model.generate_content(
+        contents=f"{PROMPT}\nMessage: {message}\nArticle: {article}", 
+        generation_config={'temperature': 0.0}, 
+        safety_settings=safety_settings)
+    return response.text
+
 def save_txt_file(output:str, path:str):
     with open(path, 'w') as f:
         f.write(output)
-
-if __name__ == "__main__":
-    argparse = argparse.ArgumentParser()
-    argparse.add_argument("--model", type=str, default='gemini-1.5-flash', help="Model name")
-    argparse.add_argument("--file_path", type=str, help="File path")
-    argparse.add_argument("--output_path", type=str, help="Output path")
-    argparse.add_argument("--type", type=str, help="Type of using function")
-    # content, image, extract
-    args = argparse.parse_args()
-    result = ""
-    if(args.type == "content"):
-        result = content_call(args.model, args.file_path)
-    elif(args.type == "image"):
-        result = image_call(args.model, args.file_path)
-    elif(args.type == "extract"):
-        result = extract_image_text(args.model, args.file_path)
-    else:
-        raise ValueError("Invalid type of function")
