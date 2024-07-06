@@ -55,11 +55,11 @@ def extract_image_text(mname:str, img_path:str):
 def summarize_html(mname:str, query:str):
     model = genai.GenerativeModel(mname)
     response = model.generate_content(
-        contents=f"Given a HTML files, summarize the news article.\nHTML files: {query}",
+        contents=f"Given a HTML files, summarize the news article and reply in traditional chinese.\nHTML files: {query}",
         generation_config={'temperature': 0.0},
         safety_settings=safety_settings
     )
-    return response.text
+    return response.text #str
 
 def faithfulness_check(mname:str, message:str, article:str):
     model = genai.GenerativeModel(mname)
@@ -73,7 +73,7 @@ def faithfulness_check(mname:str, message:str, article:str):
         contents=f"{PROMPT}\nMessage: {message}\nArticle: {article}", 
         generation_config={'temperature': 0.0}, 
         safety_settings=safety_settings)
-    return response.text
+    return response.text # Faithfulness, Neural, Contradict
 
 def save_txt_file(output:str, path:str):
     with open(path, 'w') as f:
