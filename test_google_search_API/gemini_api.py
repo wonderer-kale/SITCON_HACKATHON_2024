@@ -43,15 +43,34 @@ def image_call(mname:str, img_path:str):
     )
     return response.text
 
+def extract_image_text(mname:str, img_path:str):
+    model =genai.GenerativeModel(mname)
+    file = genai.upload_file(path=img_path, display_name='image')
+    response = model.generate_content(
+        [file, "Extract the text from the image and reply in traditional chinese."],
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    return response.text
+
+def save_txt_file(output:str, path:str):
+    with open(path, 'w') as f:
+        f.write(output)
+
 if __name__ == "__main__":
     argparse = argparse.ArgumentParser()
-    argparse.add_argument("--model", type=str, help="Model name")
-    argparse.add_argument("--input_text", type=str, help="Input text File path")
-    argparse.add_argument("--input_image", type=str, help="Input image File path")
+    argparse.add_argument("--model", type=str, default='gemini-1.5-flash', help="Model name")
+    argparse.add_argument("--file_path", type=str, help="File path")
+    argparse.add_argument("--output_path", type=str, help="Output path")
+    argparse.add_argument("--type", type=str, help="Type of using function")
+    # content, image, extract
     args = argparse.parse_args()
-    if args.input_text:
-        print(content_call(args.model, args.input_text))
-    elif args.input_image:
-        print(image_call(args.model, args.input_image))
+    result = ""
+    if(args.type == "content"):
+        result = content_call(args.model, args.file_path)
+    elif(args.type == "image"):
+        result = image_call(args.model, args.file_path)
+    elif(args.type == "extract"):
+        result = extract_image_text(args.model, args.file_path)
     else:
-        raise ValueError("Please provide either input text or input image path")
+        raise ValueError("Invalid type of function")
