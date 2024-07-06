@@ -89,8 +89,9 @@ safety_settings = [
 
 def content_call(mname:str, query:str):
     model = genai.GenerativeModel(mname)
+    prompt = "Fact check the message. If it is a recent event and you can't check the fact, you should obey the truthfulness of the message to reply. Reply in traditional Chinese."
     response = model.generate_content(
-        contents=query,
+        contents=f"{query}\n{prompt}",
         generation_config={'temperature': 0.0},
         safety_settings=safety_settings
     )
@@ -125,13 +126,12 @@ def summarize_html(mname:str, query:str):
     )
     return response.text #str
 
-def faithfulness_check(mname:str, message:str, article:str):
+def relavance_check(mname:str, message:str, article:str):
     model = genai.GenerativeModel(mname)
     PROMPT = """Here are the message and the article:
-    Faithful if the message is faithful to the article.
-    Neural if the message and article is not related.
-    Contradict if the message contradicts the article.
-    Fact check the following message by the article and reply "Faithful", "Neural" or "Contradict" only.
+    Yes means the message is related to the article.
+    No means the message is not related to the article.
+    Print the Yes or No only.
     """
     response = model.generate_content(
         contents=f"{PROMPT}\nMessage: {message}\nArticle: {article}", 
@@ -194,20 +194,27 @@ async def handle_callback(request: Request):
             response = requests.get(URL)
             print('success' if response.status_code == 200 else 'fail')
 
-            URL = data['items'][0]['link']
-            response = requests.get(URL)
+            find = False
 
-            # LLM summarize
-            llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+            for i in range(3):
+                URL = data['items'][i]['link']
+                response = requests.get(URL)
 
-            # Compare
-            faithful = faithfulness_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
-            if faithful == "Faithful" || faithful == "Contradict":
-                reply_msg = llm_summarize
-            elif faithful == "Neural":
+                # LLM summarize
+                llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+
+                # Compare
+                relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
+                #print(relevance)
+                relevance = relevance.strip()
+                if relevance == "Yes":
+                    reply_msg = llm_summarize
+                    find = True
+                    break
+                # else: continue
+
+            if find == False:
                 reply_msg = content_call(mname='gemini-1.5-flash', query=text)
-            else:
-                reply_msg = '?'
 
             # bot_condition = {
             #     "清空": 'A',
