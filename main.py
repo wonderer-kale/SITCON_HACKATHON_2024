@@ -59,9 +59,92 @@ from utils import check_image_quake, check_location_in_message, get_current_weat
 firebase_url = os.getenv('FIREBASE_URL')
 gemini_key = os.getenv('GEMINI_API_KEY')
 
-
 # Initialize the Gemini Pro API
 genai.configure(api_key=gemini_key)
+
+#######################
+
+safety_settings = [
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE",
+    },
+]
+
+def content_call(mname:str, query:str):
+    model = genai.GenerativeModel(mname)
+    response = model.generate_content(
+        contents=query,
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    return response.text
+
+def image_call(mname:str, img_path:str):
+    model = genai.GenerativeModel(mname)
+    file = genai.upload_file(path=img_path, display_name='image')
+    response = model.generate_content(
+        [file, "Do the Fact check on the image and reply in traditional chinese."],
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    return response.text
+
+def extract_image_text(mname:str, img_path:str):
+    model =genai.GenerativeModel(mname)
+    file = genai.upload_file(path=img_path, display_name='image')
+    response = model.generate_content(
+        [file, "Extract the text from the image and reply in traditional chinese."],
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    return response.text
+
+def summarize_html(mname:str, query:str):
+    model = genai.GenerativeModel(mname)
+    response = model.generate_content(
+        contents=f"Given a HTML files, summarize the news article and reply in traditional chinese.\nHTML files: {query}",
+        generation_config={'temperature': 0.0},
+        safety_settings=safety_settings
+    )
+    return response.text #str
+
+def faithfulness_check(mname:str, message:str, article:str):
+    model = genai.GenerativeModel(mname)
+    PROMPT = """Here are the message and the article:
+    Faithful if the message is faithful to the article.
+    Neural if the message and article is not related.
+    Contradict if the message contradicts the article.
+    Fact check the following message by the article and reply "Faithful", "Neural" or "Contradict" only.
+    """
+    response = model.generate_content(
+        contents=f"{PROMPT}\nMessage: {message}\nArticle: {article}", 
+        generation_config={'temperature': 0.0}, 
+        safety_settings=safety_settings)
+    return response.text # Faithfulness, Neural, Contradict
+
+def save_txt_file(output:str, path:str):
+    with open(path, 'w') as f:
+        f.write(output)
+
+#######################
+
 
 
 @app.get("/health")
@@ -107,15 +190,24 @@ async def handle_callback(request: Request):
             else:
                 messages = chatgpt
 
-            # # URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
-            # # response = requests.get(URL)
-            # if response.status_code == 200:
-            #     print('success')
-            #     reply_msg = 'success test'
-            # else:
-            #     print('fail')
-            #     reply_msg = 'fail test'
-            reply_msg = f'test your message: {text}'
+            URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
+            response = requests.get(URL)
+            print('success' if response.status_code == 200 else 'fail')
+
+            URL = data['items'][0]['link']
+            response = requests.get(URL)
+
+            # LLM summarize
+            llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+
+            # Compare
+            faithful = faithfulness_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
+            if faithful == "Faithful" || faithful == "Contradict":
+                reply_msg = llm_summarize
+            elif faithful == "Neural":
+                reply_msg = content_call(mname='gemini-1.5-flash', query=text)
+            else:
+                reply_msg = '?'
 
             # bot_condition = {
             #     "清空": 'A',
