@@ -53,7 +53,7 @@ parser = WebhookParser(channel_secret)
 
 import google.generativeai as genai
 from firebase import firebase
-from utils import check_image_quake, check_location_in_message, get_current_weather, get_weather_data, simplify_data
+# from utils import check_image_quake, check_location_in_message, get_current_weather, get_weather_data, simplify_data
 
 
 firebase_url = os.getenv('FIREBASE_URL')
@@ -190,7 +190,9 @@ async def handle_callback(request: Request):
             else:
                 messages = chatgpt
 
-            URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
+            cx = '339feef75a8d2425c'
+            key = 'AIzaSyCClHSsoa0VReJOqZoG2fSjv_RPO0hnt1g'
+            URL = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={text}'
             response = requests.get(URL)
 
             if response.status_code == 200:
@@ -206,19 +208,26 @@ async def handle_callback(request: Request):
                 response = requests.get(URL)
 
                 # LLM summarize
-                llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+                # llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+                title = data['items'][i]['pagemap']['metatags'][0]['og:title']
+                if 'og:description' in data['items'][0]['pagemap']['metatags'][0].keys():
+                    description = data['items'][0]['pagemap']['metatags'][0]['og:description']
+                else:
+                    description = data['items'][0]['snippet']
+                description = data['items'][i]['pagemap']['metatags'][0]['og:description']
+                llm_summarize = title + '\n' + description
 
                 # Compare
                 relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
                 #print(relevance)
                 relevance = relevance.strip()
                 if relevance == "Yes":
-                    reply_msg = llm_summarize
+                    reply_msg = '這是最相關的假訊息查核報告\n\n' + llm_summarize + '\n\n完整請至\n' + URL
                     find = True
                     break
                 # else: continue
 
-            if find == False:
+            if not find:
                 reply_msg = content_call(mname='gemini-1.5-flash', query=text)
 
             # bot_condition = {
@@ -288,6 +297,7 @@ async def handle_callback(request: Request):
                     messages=[TextMessage(text=reply_msg)]
                 ))
 
+    print('OK')
     return 'OK'
 
 if __name__ == "__main__":
