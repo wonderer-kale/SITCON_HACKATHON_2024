@@ -53,7 +53,7 @@ parser = WebhookParser(channel_secret)
 
 import google.generativeai as genai
 from firebase import firebase
-# from utils import check_image_quake, check_location_in_message, get_current_weather, get_weather_data, simplify_data
+from utils import check_image_quake, check_location_in_message, get_current_weather, get_weather_data, simplify_data
 
 
 firebase_url = os.getenv('FIREBASE_URL')
@@ -190,9 +190,7 @@ async def handle_callback(request: Request):
             else:
                 messages = chatgpt
 
-            cx = '339feef75a8d2425c'
-            key = 'AIzaSyAtcaJBfsyntOQvBtndhQufp3CVxkKQDXE'
-            URL = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={text}'
+            URL = f'https://www.googleapis.com/customsearch/v1?cx=339feef75a8d2425c&key=AIzaSyCZP6s7zMt6Srq00v4a6EsZnTgvPGRv004&q={text}'
             response = requests.get(URL)
 
             if response.status_code == 200:
