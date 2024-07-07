@@ -6,6 +6,48 @@ if os.getenv('API_ENV') != 'production':
     from dotenv import load_dotenv
 
     load_dotenv()
+from openai import OpenAI
+client = OpenAI(api_key="sk-proj-IJIUooylHizXU0iGmdpfT3BlbkFJAAa87a7RfMok5SfpxaTd")
+
+def call_openai(text:str):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": text}],
+        max_tokens=1024,
+        temperature=0.0,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+    )
+
+    return response.choices[0].message.content
+
+PROMPT = """Here are the message and the article:
+Yes means the message is related to the article.
+No means the message is not related to the article.
+Print the Yes or No only.
+"""
+def google_search(user_input):
+    cx = '339feef75a8d2425c'
+    key = 'AIzaSyCClHSsoa0VReJOqZoG2fSjv_RPO0hnt1g'
+
+    url1 = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={user_input}' # Google 搜尋
+
+    response = requests.get(url1)
+    if response.status_code == 200:
+        data = response.json() # 得到的 json 檔案
+        print("JSON檔案已成功擷取。")
+    else:
+        print(f"擷取失敗，狀態碼：{response.status_code}")
+
+    url2 = data['items'][0]['link'] # Google 搜尋結果的第一個連結
+    title = data['items'][0]['title']
+    if 'og:description' in data['items'][0]['pagemap']['metatags'][0].keys():
+        description = data['items'][0]['pagemap']['metatags'][0]['og:description']
+    else:
+        description = data['items'][0]['snippet']
+
+    return url2, title, description
 
 
 from fastapi import FastAPI, HTTPException, Request
@@ -87,16 +129,6 @@ safety_settings = [
     },
 ]
 
-def content_call(mname:str, query:str):
-    model = genai.GenerativeModel(mname)
-    prompt = "Fact check the message. If it is a recent event and you can't check the fact, you should obey the truthfulness of the message to reply. Reply in traditional Chinese."
-    response = model.generate_content(
-        contents=f"{query}\n{prompt}",
-        generation_config={'temperature': 0.0},
-        safety_settings=safety_settings
-    )
-    return response.text
-
 def image_call(mname:str, img_path:str):
     model = genai.GenerativeModel(mname)
     file = genai.upload_file(path=img_path, display_name='image')
@@ -106,42 +138,6 @@ def image_call(mname:str, img_path:str):
         safety_settings=safety_settings
     )
     return response.text
-
-def extract_image_text(mname:str, img_path:str):
-    model =genai.GenerativeModel(mname)
-    file = genai.upload_file(path=img_path, display_name='image')
-    response = model.generate_content(
-        [file, "Extract the text from the image and reply in traditional chinese."],
-        generation_config={'temperature': 0.0},
-        safety_settings=safety_settings
-    )
-    return response.text
-
-def summarize_html(mname:str, query:str):
-    model = genai.GenerativeModel(mname)
-    response = model.generate_content(
-        contents=f"Given a HTML files, summarize the news article and reply in traditional chinese.\nHTML files: {query}",
-        generation_config={'temperature': 0.0},
-        safety_settings=safety_settings
-    )
-    return response.text #str
-
-def relavance_check(mname:str, message:str, article:str):
-    model = genai.GenerativeModel(mname)
-    PROMPT = """Here are the message and the article:
-    Yes means the message is related to the article.
-    No means the message is not related to the article.
-    Print the Yes or No only.
-    """
-    response = model.generate_content(
-        contents=f"{PROMPT}\nMessage: {message}\nArticle: {article}", 
-        generation_config={'temperature': 0.0}, 
-        safety_settings=safety_settings)
-    return response.text # Faithfulness, Neural, Contradict
-
-def save_txt_file(output:str, path:str):
-    with open(path, 'w') as f:
-        f.write(output)
 
 #######################
 
@@ -184,51 +180,14 @@ async def handle_callback(request: Request):
         chatgpt = fdb.get(user_chat_path, None)
 
         if msg_type == 'text':
-
-            if chatgpt is None:
-                messages = []
+            URL, title, description = google_search(text)
+            promt = f"{PROMPT}\nMessage: {text}\nArticle: {title}\n{description}"
+            response = call_openai(prompt)
+            if response.strip() == "Yes":
+                reply_msg = f"這是最為相關的假訊息查核報告\n\n{title}\n\n完整版請至:\n{URL}"
             else:
-                messages = chatgpt
-
-            cx = '339feef75a8d2425c'
-            key = 'AIzaSyCClHSsoa0VReJOqZoG2fSjv_RPO0hnt1g'
-            URL = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={text}'
-            response = requests.get(URL)
-
-            if response.status_code == 200:
-                data = response.json()
-                print('success')
-            else:
-                print('fail')
-
-            find = False
-
-            for i in range(1):
-                URL = data['items'][i]['link']
-                response = requests.get(URL)
-
-                # LLM summarize
-                # llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
-                title = data['items'][i]['pagemap']['metatags'][0]['og:title']
-                if 'og:description' in data['items'][0]['pagemap']['metatags'][0].keys():
-                    description = data['items'][0]['pagemap']['metatags'][0]['og:description']
-                else:
-                    description = data['items'][0]['snippet']
-                description = data['items'][i]['pagemap']['metatags'][0]['og:description']
-                llm_summarize = title + '\n' + description
-
-                # Compare
-                relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
-                #print(relevance)
-                relevance = relevance.strip()
-                if relevance == "Yes":
-                    reply_msg = '這是最相關的假訊息查核報告\n\n' + llm_summarize + '\n\n完整請至\n' + URL
-                    find = True
-                    break
-                # else: continue
-
-            if not find:
-                reply_msg = content_call(mname='gemini-1.5-flash', query=text)
+                prompt = "Fact check the message. If it is a recent event and you can't check the fact, you should doubt the truthfulness of the message. Reply in traditional Chinese."
+                reply_msg = call_openai(f"{prompt}\n{text}")
 
             # bot_condition = {
             #     "清空": 'A',
@@ -297,7 +256,6 @@ async def handle_callback(request: Request):
                     messages=[TextMessage(text=reply_msg)]
                 ))
 
-    print('OK')
     return 'OK'
 
 if __name__ == "__main__":
