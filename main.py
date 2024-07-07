@@ -191,7 +191,7 @@ async def handle_callback(request: Request):
                 messages = chatgpt
 
             cx = '339feef75a8d2425c'
-            key = 'AIzaSyCClHSsoa0VReJOqZoG2fSjv_RPO0hnt1g'
+            key = 'AIzaSyBY1JbrhUqYPhOnmPnnJh5sQJbyJs0rFdE'
             URL = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={text}'
             response = requests.get(URL)
 
