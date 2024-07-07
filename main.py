@@ -191,7 +191,7 @@ async def handle_callback(request: Request):
                 messages = chatgpt
 
             cx = '339feef75a8d2425c'
-            key = 'AIzaSyAtcaJBfsyntOQvBtndhQufp3CVxkKQDXE'
+            key = 'AIzaSyCClHSsoa0VReJOqZoG2fSjv_RPO0hnt1g'
             URL = f'https://www.googleapis.com/customsearch/v1?cx={cx}&key={key}&q={text}'
             response = requests.get(URL)
 
@@ -214,6 +214,7 @@ async def handle_callback(request: Request):
                     description = data['items'][0]['pagemap']['metatags'][0]['og:description']
                 else:
                     description = data['items'][0]['snippet']
+                description = data['items'][i]['pagemap']['metatags'][0]['og:description']
                 llm_summarize = title + '\n' + description
 
                 # Compare
@@ -296,6 +297,7 @@ async def handle_callback(request: Request):
                     messages=[TextMessage(text=reply_msg)]
                 ))
 
+    print('OK')
     return 'OK'
 
 if __name__ == "__main__":
