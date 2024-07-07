@@ -256,6 +256,7 @@ async def handle_callback(request: Request):
                     messages=[TextMessage(text=reply_msg)]
                 ))
 
+    print('OK')
     return 'OK'
 
 if __name__ == "__main__":
