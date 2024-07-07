@@ -208,19 +208,25 @@ async def handle_callback(request: Request):
                 response = requests.get(URL)
 
                 # LLM summarize
-                llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+                # llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+                title = data['items'][i]['pagemap']['metatags'][0]['og:title']
+                if 'og:description' in data['items'][0]['pagemap']['metatags'][0].keys():
+                    description = data['items'][0]['pagemap']['metatags'][0]['og:description']
+                else:
+                    description = data['items'][0]['snippet']
+                llm_summarize = title + '\n' + description
 
                 # Compare
                 relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
                 #print(relevance)
                 relevance = relevance.strip()
                 if relevance == "Yes":
-                    reply_msg = llm_summarize
+                    reply_msg = '這是最相關的假訊息查核報告\n\n' + llm_summarize + '\n\n完整請至\n' + URL
                     find = True
                     break
                 # else: continue
 
-            if find == False:
+            if not find:
                 reply_msg = content_call(mname='gemini-1.5-flash', query=text)
 
             # bot_condition = {
