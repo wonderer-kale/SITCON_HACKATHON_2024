@@ -209,7 +209,7 @@ async def handle_callback(request: Request):
 
                 # LLM summarize
                 # llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
-                title = data['items'][i]['pagemap']['metatags'][0]['og:title']
+                title = data['items'][0]['title']
                 if 'og:description' in data['items'][0]['pagemap']['metatags'][0].keys():
                     description = data['items'][0]['pagemap']['metatags'][0]['og:description']
                 else:
