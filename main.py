@@ -214,7 +214,6 @@ async def handle_callback(request: Request):
                     description = data['items'][0]['pagemap']['metatags'][0]['og:description']
                 else:
                     description = data['items'][0]['snippet']
-                description = data['items'][i]['pagemap']['metatags'][0]['og:description']
                 llm_summarize = title + '\n' + description
 
                 # Compare
