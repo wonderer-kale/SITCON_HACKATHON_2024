@@ -15,7 +15,10 @@ def google_search(user_input):
         print(f"擷取失敗，狀態碼：{response.status_code}")
 
     url2 = data['items'][0]['link'] # Google 搜尋結果的第一個連結
-    title = data['items'][0]['pagemap']['metatags'][0]['og:title']
-    description = data['items'][0]['pagemap']['metatags'][0]['og:description']
+    title = data['items'][0]['title']
+    if 'og:description' in data['items'][0]['pagemap']['metatags'][0].keys():
+        description = data['items'][0]['pagemap']['metatags'][0]['og:description']
+    else:
+        description = data['items'][0]['snippet']
 
     return url2, title, description
