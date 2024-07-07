@@ -208,7 +208,10 @@ async def handle_callback(request: Request):
                 response = requests.get(URL)
 
                 # LLM summarize
-                llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+                # llm_summarize = summarize_html(mname='gemini-1.5-flash', query=response.text)
+                title = data['items'][i]['pagemap']['metatags'][0]['og:title']
+                description = data['items'][i]['pagemap']['metatags'][0]['og:description']
+                llm_summarize = title + '\n' + description
 
                 # Compare
                 relevance = relavance_check(mname='gemini-1.5-flash', message=text, article=llm_summarize)
